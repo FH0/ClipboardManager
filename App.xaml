@@ -1,0 +1,57 @@
+﻿<Application x:Class="ClipboardManager.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ClipboardManager"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <Color x:Key="VsCodeBackground">#1E1E1E</Color>
+        <Color x:Key="VsCodeListBackground">#252526</Color>
+        <Color x:Key="VsCodeListHover">#2A2D2E</Color>
+        <Color x:Key="VsCodeListSelected">#094771</Color>
+        <Color x:Key="VsCodeForeground">#CCCCCC</Color>
+        <Color x:Key="VsCodeInputBackground">#3C3C3C</Color>
+        <Color x:Key="VsCodeInputBorder">#3C3C3C</Color>
+        <Color x:Key="VsCodeInputForeground">#CCCCCC</Color>
+
+        <SolidColorBrush x:Key="BgBrush" Color="{StaticResource VsCodeBackground}"/>
+        <SolidColorBrush x:Key="ListBgBrush" Color="{StaticResource VsCodeListBackground}"/>
+        <SolidColorBrush x:Key="ListHoverBrush" Color="{StaticResource VsCodeListHover}"/>
+        <SolidColorBrush x:Key="ListSelectedBrush" Color="{StaticResource VsCodeListSelected}"/>
+        <SolidColorBrush x:Key="FgBrush" Color="{StaticResource VsCodeForeground}"/>
+        <SolidColorBrush x:Key="InputBgBrush" Color="{StaticResource VsCodeInputBackground}"/>
+        <SolidColorBrush x:Key="InputBorderBrush" Color="{StaticResource VsCodeInputBorder}"/>
+        <SolidColorBrush x:Key="InputFgBrush" Color="{StaticResource VsCodeInputForeground}"/>
+
+        <!-- Custom Item Container Style for ListBox -->
+        <Style x:Key="ClipboardItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource FgBrush}"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                Padding="{TemplateBinding Padding}" 
+                                CornerRadius="4" Margin="2">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource ListHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource ListSelectedBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Application.Resources>
+</Application>

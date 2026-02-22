@@ -1,0 +1,15 @@
+bin/
+obj/
+.vs/
+*.user
+
+# Python
+venv/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test outputs
+test_out*.txt
+*.bmp
