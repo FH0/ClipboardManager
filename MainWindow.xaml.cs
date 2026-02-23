@@ -10,6 +10,24 @@ namespace ClipboardManager
 {
     public partial class MainWindow : Window
     {
+        public static readonly DependencyProperty ShowTimeEnabledProperty =
+            DependencyProperty.Register("ShowTimeEnabled", typeof(bool), typeof(MainWindow), new PropertyMetadata(false, OnShowTimeEnabledChanged));
+
+        public bool ShowTimeEnabled
+        {
+            get { return (bool)GetValue(ShowTimeEnabledProperty); }
+            set { SetValue(ShowTimeEnabledProperty, value); }
+        }
+
+        private static void OnShowTimeEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is MainWindow window)
+            {
+                SettingsService.Instance.Settings.ShowTime = (bool)e.NewValue;
+                SettingsService.Instance.Save();
+            }
+        }
+
         private DatabaseService _dbService;
         private HotkeyService _hotkeyService;
         private ClipboardMonitor _clipboardMonitor;
@@ -32,6 +50,11 @@ namespace ClipboardManager
 
             _hotkeyService.OnHotkeyActivated = ToggleWindow;
             _clipboardMonitor.ClipboardTextChanged += OnClipboardTextChanged;
+
+            ShowTimeEnabled = SettingsService.Instance.Settings.ShowTime;
+            ShowTimeToggle.IsChecked = ShowTimeEnabled;
+            LimitBox.Text = SettingsService.Instance.Settings.RecordLimit.ToString();
+            UpdateCounts();
         }
 
         private void Window_Loaded(object? sender, RoutedEventArgs e)
@@ -51,7 +74,7 @@ namespace ClipboardManager
         {
             var workArea = SystemParameters.WorkArea;
             this.Width = workArea.Width / 3;
-            this.Height = workArea.Height / 3;
+            this.Height = workArea.Height / 2;
             this.Left = workArea.Left + (workArea.Width - this.Width) / 2;
             this.Top = workArea.Top + (workArea.Height - this.Height) / 2;
         }
@@ -121,11 +144,15 @@ namespace ClipboardManager
             SearchBox.Text = string.Empty;
             this.Visibility = Visibility.Visible;
             this.Activate();
-            SearchBox.Focus();
-            
+
             if (_items.Count > 0)
             {
                 ClipboardList.SelectedIndex = 0;
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                {
+                    ClipboardList.UpdateLayout();
+                    FocusItemAt(0);
+                }));
             }
         }
 
@@ -151,6 +178,10 @@ namespace ClipboardManager
                 {
                     LoadItems(SearchBox.Text);
                 }
+                else
+                {
+                    UpdateCounts();
+                }
             });
         }
 
@@ -162,6 +193,55 @@ namespace ClipboardManager
             {
                 _items.Add(item);
             }
+            UpdateCounts();
+        }
+
+        private void UpdateCounts()
+        {
+            int total = _dbService.GetTotalCount();
+            int limit = SettingsService.Instance.Settings.RecordLimit;
+            int unused = Math.Max(0, limit - total);
+            
+            UsedCountText.Text = total.ToString();
+            UnusedCountText.Text = unused.ToString();
+        }
+
+        private void LimitBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            ApplyLimit();
+        }
+
+        private void LimitBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                ApplyLimit();
+                e.Handled = true;
+            }
+        }
+
+        private void ApplyLimit()
+        {
+            if (int.TryParse(LimitBox.Text, out int newLimit) && newLimit > 0)
+            {
+                SettingsService.Instance.Settings.RecordLimit = newLimit;
+                SettingsService.Instance.Save();
+                UpdateCounts();
+            }
+            else
+            {
+                LimitBox.Text = SettingsService.Instance.Settings.RecordLimit.ToString();
+            }
+        }
+
+        private void ShowTimeToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            ShowTimeEnabled = true;
+        }
+
+        private void ShowTimeToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            ShowTimeEnabled = false;
         }
 
         private void SearchBox_TextChanged(object? sender, TextChangedEventArgs e)
@@ -177,11 +257,7 @@ namespace ClipboardManager
         {
             if (e.Key == Key.Down)
             {
-                ClipboardList.Focus();
-                if (ClipboardList.Items.Count > 0 && ClipboardList.SelectedIndex < 0)
-                {
-                    ClipboardList.SelectedIndex = 0;
-                }
+                FocusSelectedListItem();
                 e.Handled = true;
             }
             else if (e.Key == Key.Enter)
@@ -191,16 +267,36 @@ namespace ClipboardManager
             }
         }
 
+        private void FocusSelectedListItem()
+        {
+            if (ClipboardList.Items.Count == 0) return;
+            int nextIndex = ClipboardList.SelectedIndex < 0
+                ? 0
+                : Math.Min(ClipboardList.SelectedIndex + 1, ClipboardList.Items.Count - 1);
+            ClipboardList.SelectedIndex = nextIndex;
+            FocusItemAt(nextIndex);
+        }
+
+        private void FocusItemAt(int index)
+        {
+            var container = ClipboardList.ItemContainerGenerator.ContainerFromIndex(index) as ListBoxItem;
+            container?.Focus();
+        }
+
+        private void Window_PreviewTextInput(object? sender, TextCompositionEventArgs e)
+        {
+            if (SearchBox.IsFocused) return;
+            SearchBox.Focus();
+            SearchBox.AppendText(e.Text);
+            SearchBox.CaretIndex = SearchBox.Text.Length;
+            e.Handled = true;
+        }
+
         private void ClipboardList_PreviewKeyDown(object? sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
                 ProcessSelection();
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Up && ClipboardList.SelectedIndex <= 0)
-            {
-                SearchBox.Focus();
                 e.Handled = true;
             }
         }

@@ -23,7 +23,6 @@ namespace ClipboardManager.Services
     {
         private readonly string _dbPath;
         private readonly string _connectionString;
-        private const int MaxItems = 50000;
 
         public DatabaseService()
         {
@@ -77,10 +76,19 @@ namespace ClipboardManager.Services
                             LIMIT -1 OFFSET @MaxLimit
                         );
                     ";
-                    connection.Execute(deleteSql, new { MaxLimit = MaxItems }, transaction);
+                    connection.Execute(deleteSql, new { MaxLimit = SettingsService.Instance.Settings.RecordLimit }, transaction);
                     
                     transaction.Commit();
                 }
+            }
+        }
+
+        public int GetTotalCount()
+        {
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                return connection.ExecuteScalar<int>("SELECT COUNT(*) FROM Items");
             }
         }
 

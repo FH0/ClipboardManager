@@ -9,7 +9,8 @@
         WindowStyle="None" AllowsTransparency="True" Background="#00000000"
         WindowStartupLocation="CenterScreen" ShowInTaskbar="False"
         Topmost="True" ResizeMode="NoResize"
-        Loaded="Window_Loaded" Deactivated="Window_Deactivated" PreviewKeyDown="Window_PreviewKeyDown">
+        Loaded="Window_Loaded" Deactivated="Window_Deactivated" PreviewKeyDown="Window_PreviewKeyDown"
+        PreviewTextInput="Window_PreviewTextInput">
     <Border Background="{StaticResource BgBrush}" BorderBrush="#333333" BorderThickness="1" CornerRadius="8" Margin="10">
         <Border.Effect>
             <DropShadowEffect Color="Black" BlurRadius="15" ShadowDepth="2" Opacity="0.5"/>
@@ -18,6 +19,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- Search Box -->
@@ -46,13 +48,56 @@
                      MouseDoubleClick="ClipboardList_MouseDoubleClick">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding Content}" 
-                                   TextTrimming="CharacterEllipsis" 
-                                   MaxHeight="40" TextWrapping="Wrap"
-                                   FontFamily="Consolas, 'Courier New', monospace" FontSize="13"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TimeText" Grid.Column="0" Text="{Binding CreatedAt, StringFormat=\{0:MM-dd HH:mm:ss\}}" 
+                                       Foreground="#888888" Margin="0,0,10,0" VerticalAlignment="Center" 
+                                       FontFamily="Consolas, 'Courier New', monospace" FontSize="12"
+                                       Visibility="Collapsed"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Content}" 
+                                       TextTrimming="CharacterEllipsis" 
+                                       MaxHeight="40" TextWrapping="Wrap"
+                                       FontFamily="Consolas, 'Courier New', monospace" FontSize="13" 
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ShowTimeEnabled}" Value="True">
+                                <Setter TargetName="TimeText" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
+
+            <!-- Bottom Panel -->
+            <Grid Grid.Row="2" Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="已使用: " Foreground="#888888" FontSize="12"/>
+                    <TextBlock x:Name="UsedCountText" Text="0" Foreground="#CCCCCC" FontSize="12"/>
+                    <TextBlock Text=" / 未使用: " Foreground="#888888" FontSize="12"/>
+                    <TextBlock x:Name="UnusedCountText" Text="0" Foreground="#CCCCCC" FontSize="12"/>
+                </StackPanel>
+                
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock Text="上限:" Foreground="#888888" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                    <TextBox x:Name="LimitBox" Width="55" Height="22" Background="{StaticResource InputBgBrush}" 
+                             Foreground="{StaticResource InputFgBrush}" BorderBrush="{StaticResource InputBorderBrush}" 
+                             BorderThickness="1" Padding="2" FontSize="12" TextAlignment="Center"
+                             LostFocus="LimitBox_LostFocus" KeyDown="LimitBox_KeyDown"/>
+                    
+                    <CheckBox x:Name="ShowTimeToggle" Content="显示时间" Foreground="#888888" FontSize="12" 
+                              Margin="15,0,0,0" VerticalAlignment="Center"
+                              Checked="ShowTimeToggle_Checked" Unchecked="ShowTimeToggle_Unchecked"/>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Border>
 </Window>
