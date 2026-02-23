@@ -63,7 +63,6 @@ namespace ClipboardManager.Services
 
         public static void SimulateCtrlV()
         {
-            // First release Alt to prevent Alt+V issues if user is holding it
             INPUT[] inputs = new INPUT[]
             {
                 new INPUT
@@ -71,7 +70,7 @@ namespace ClipboardManager.Services
                     type = INPUT_KEYBOARD,
                     u = new InputUnion
                     {
-                        ki = new KEYBDINPUT { wVk = 0x12, dwFlags = KEYEVENTF_KEYUP } // Release Alt
+                        ki = new KEYBDINPUT { wVk = 0x12, dwFlags = KEYEVENTF_KEYUP }
                     }
                 },
                 new INPUT
@@ -79,7 +78,7 @@ namespace ClipboardManager.Services
                     type = INPUT_KEYBOARD,
                     u = new InputUnion
                     {
-                        ki = new KEYBDINPUT { wVk = VK_CONTROL, dwFlags = 0 } // Ctrl down
+                        ki = new KEYBDINPUT { wVk = VK_CONTROL, dwFlags = 0 }
                     }
                 },
                 new INPUT
@@ -87,7 +86,7 @@ namespace ClipboardManager.Services
                     type = INPUT_KEYBOARD,
                     u = new InputUnion
                     {
-                        ki = new KEYBDINPUT { wVk = VK_V, dwFlags = 0 } // V down
+                        ki = new KEYBDINPUT { wVk = VK_V, dwFlags = 0 }
                     }
                 },
                 new INPUT
@@ -95,7 +94,7 @@ namespace ClipboardManager.Services
                     type = INPUT_KEYBOARD,
                     u = new InputUnion
                     {
-                        ki = new KEYBDINPUT { wVk = VK_V, dwFlags = KEYEVENTF_KEYUP } // V up
+                        ki = new KEYBDINPUT { wVk = VK_V, dwFlags = KEYEVENTF_KEYUP }
                     }
                 },
                 new INPUT
@@ -103,7 +102,7 @@ namespace ClipboardManager.Services
                     type = INPUT_KEYBOARD,
                     u = new InputUnion
                     {
-                        ki = new KEYBDINPUT { wVk = VK_CONTROL, dwFlags = KEYEVENTF_KEYUP } // Ctrl up
+                        ki = new KEYBDINPUT { wVk = VK_CONTROL, dwFlags = KEYEVENTF_KEYUP }
                     }
                 }
             };

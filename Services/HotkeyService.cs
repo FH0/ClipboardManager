@@ -14,13 +14,12 @@ namespace ClipboardManager.Services
 
         private const int HOTKEY_ID = 9000;
 
-        // Modifiers
         private const uint MOD_ALT = 0x0001;
         private const uint VK_V = 0x56;
 
         private IntPtr _windowHandle;
-        private HwndSource _source;
-        public Action OnHotkeyActivated { get; set; }
+        private HwndSource? _source;
+        public Action? OnHotkeyActivated { get; set; }
 
         public void Initialize(IntPtr windowHandle)
         {
@@ -28,10 +27,8 @@ namespace ClipboardManager.Services
             _source = HwndSource.FromHwnd(_windowHandle);
             _source.AddHook(HwndHook);
 
-            // Register Alt + V
             if (!RegisterHotKey(_windowHandle, HOTKEY_ID, MOD_ALT, VK_V))
             {
-                // Optionally handle failure
                 Console.WriteLine("Failed to register hotkey.");
             }
         }

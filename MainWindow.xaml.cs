@@ -15,8 +15,10 @@ namespace ClipboardManager
         private ClipboardMonitor _clipboardMonitor;
         private ObservableCollection<ClipboardItem> _items;
         
-        // Prevent recursive clipboard updates when we copy to paste
+        private System.Windows.Forms.NotifyIcon? _notifyIcon;
+
         private bool _isPasting = false;
+        private DateTime _lastDeactivatedTime;
 
         public MainWindow()
         {
@@ -32,14 +34,73 @@ namespace ClipboardManager
             _clipboardMonitor.ClipboardTextChanged += OnClipboardTextChanged;
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private void Window_Loaded(object? sender, RoutedEventArgs e)
         {
             var hwnd = new WindowInteropHelper(this).Handle;
             _hotkeyService.Initialize(hwnd);
             _clipboardMonitor.Initialize(hwnd);
             
+            SetupWindowSizeAndPosition();
+            SetupTrayIcon();
+
             LoadItems();
-            HideWindow(); // Start hidden
+            HideWindow();
+        }
+
+        private void SetupWindowSizeAndPosition()
+        {
+            var workArea = SystemParameters.WorkArea;
+            this.Width = workArea.Width / 3;
+            this.Height = workArea.Height / 3;
+            this.Left = workArea.Left + (workArea.Width - this.Width) / 2;
+            this.Top = workArea.Top + (workArea.Height - this.Height) / 2;
+        }
+
+        private void SetupTrayIcon()
+        {
+            _notifyIcon = new System.Windows.Forms.NotifyIcon();
+            try {
+                _notifyIcon.Icon = System.Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            } catch {
+                _notifyIcon.Icon = System.Drawing.SystemIcons.Application;
+            }
+            _notifyIcon.Visible = true;
+            _notifyIcon.Text = "Clipboard Manager";
+            
+            _notifyIcon.MouseClick += OnTrayIconMouseClick;
+
+            var contextMenu = new System.Windows.Forms.ContextMenuStrip();
+            var exitItem = new System.Windows.Forms.ToolStripMenuItem("Exit");
+            exitItem.Click += OnExitClicked;
+            contextMenu.Items.Add(exitItem);
+            _notifyIcon.ContextMenuStrip = contextMenu;
+        }
+
+        private void OnTrayIconMouseClick(object? s, System.Windows.Forms.MouseEventArgs args)
+        {
+            if (args.Button == System.Windows.Forms.MouseButtons.Left)
+            {
+                if (this.Visibility == Visibility.Visible)
+                {
+                    HideWindow();
+                }
+                else
+                {
+                    if ((DateTime.Now - _lastDeactivatedTime).TotalMilliseconds < 200)
+                    {
+                        return;
+                    }
+                    ShowWindow();
+                    this.Activate();
+                }
+            }
+        }
+
+        private void OnExitClicked(object? s, EventArgs args)
+        {
+            if (_notifyIcon != null)
+                _notifyIcon.Visible = false;
+            System.Windows.Application.Current.Shutdown();
         }
 
         private void ToggleWindow()
@@ -73,16 +134,17 @@ namespace ClipboardManager
             this.Visibility = Visibility.Hidden;
         }
 
-        private void Window_Deactivated(object sender, EventArgs e)
+        private void Window_Deactivated(object? sender, EventArgs e)
         {
+            _lastDeactivatedTime = DateTime.Now;
             HideWindow();
         }
 
-        private void OnClipboardTextChanged(object sender, string text)
+        private void OnClipboardTextChanged(object? sender, string text)
         {
             if (_isPasting) return;
 
-            Application.Current.Dispatcher.Invoke(() =>
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
                 _dbService.AddOrUpdateItem(text);
                 if (this.Visibility == Visibility.Visible)
@@ -102,7 +164,7 @@ namespace ClipboardManager
             }
         }
 
-        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void SearchBox_TextChanged(object? sender, TextChangedEventArgs e)
         {
             LoadItems(SearchBox.Text);
             if (_items.Count > 0)
@@ -111,7 +173,7 @@ namespace ClipboardManager
             }
         }
 
-        private void SearchBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void SearchBox_PreviewKeyDown(object? sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == Key.Down)
             {
@@ -129,7 +191,7 @@ namespace ClipboardManager
             }
         }
 
-        private void ClipboardList_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void ClipboardList_PreviewKeyDown(object? sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
@@ -143,12 +205,12 @@ namespace ClipboardManager
             }
         }
 
-        private void ClipboardList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void ClipboardList_MouseDoubleClick(object? sender, MouseButtonEventArgs e)
         {
             ProcessSelection();
         }
 
-        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void Window_PreviewKeyDown(object? sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
             {
@@ -159,17 +221,17 @@ namespace ClipboardManager
 
         private void ProcessSelection()
         {
-            if (ClipboardList.SelectedItem is ClipboardItem selectedItem)
+            if (ClipboardList.SelectedItem is ClipboardItem selectedItem
+                && selectedItem.Content is string content)
             {
                 _isPasting = true;
-                Clipboard.SetText(selectedItem.Content);
-                _dbService.AddOrUpdateItem(selectedItem.Content); // Move to top
+                System.Windows.Clipboard.SetText(content);
+                _dbService.AddOrUpdateItem(content);
                 HideWindow();
                 
-                // Small delay to ensure DB and Window hiding completes
                 System.Threading.Tasks.Task.Delay(50).ContinueWith(_ => 
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
                         PasteAction.SimulateCtrlV();
                         _isPasting = false;
@@ -182,6 +244,11 @@ namespace ClipboardManager
         {
             _hotkeyService.Dispose();
             _clipboardMonitor.Dispose();
+            if (_notifyIcon != null)
+            {
+                _notifyIcon.Visible = false;
+                _notifyIcon.Dispose();
+            }
             base.OnClosed(e);
         }
     }

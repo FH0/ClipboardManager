@@ -17,9 +17,9 @@ namespace ClipboardManager.Services
 
         private const int WM_CLIPBOARDUPDATE = 0x031D;
         private IntPtr _windowHandle;
-        private HwndSource _source;
+        private HwndSource? _source;
 
-        public event EventHandler<string> ClipboardTextChanged;
+        public event EventHandler<string>? ClipboardTextChanged;
 
         public void Initialize(IntPtr windowHandle)
         {
@@ -42,9 +42,9 @@ namespace ClipboardManager.Services
         {
             try
             {
-                if (Clipboard.ContainsText())
+                if (System.Windows.Clipboard.ContainsText())
                 {
-                    string text = Clipboard.GetText();
+                    string text = System.Windows.Clipboard.GetText();
                     if (!string.IsNullOrWhiteSpace(text))
                     {
                         ClipboardTextChanged?.Invoke(this, text);
@@ -53,7 +53,6 @@ namespace ClipboardManager.Services
             }
             catch (Exception ex)
             {
-                // Clipboard exceptions often happen due to other applications holding locks
                 Console.WriteLine("Clipboard error: " + ex.Message);
             }
         }

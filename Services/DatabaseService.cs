@@ -10,7 +10,7 @@ namespace ClipboardManager.Services
     public class ClipboardItem
     {
         public long Id { get; set; }
-        public string Content { get; set; }
+        public string? Content { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public override string ToString()
@@ -69,7 +69,6 @@ namespace ClipboardManager.Services
                     ";
                     connection.Execute(sql, new { Content = content, CreatedAt = DateTime.UtcNow }, transaction);
 
-                    // Enforce MaxItems limit
                     var deleteSql = @"
                         DELETE FROM Items 
                         WHERE Id IN (
@@ -98,7 +97,6 @@ namespace ClipboardManager.Services
                 }
                 else
                 {
-                    // Full text search could be optimized, but LIKE is acceptable for simple queries
                     var query = "%" + searchQuery + "%";
                     return connection.Query<ClipboardItem>(
                         "SELECT * FROM Items WHERE Content LIKE @SearchQuery ORDER BY CreatedAt DESC LIMIT @Limit", 
